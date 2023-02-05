@@ -1,9 +1,9 @@
 # This is my laboratory work at BSUIR
-## subject: methods and algorithms of descision making
+### subject: methods and algorithms of decision making
 
-##Lab no. 1 & 2
+### Lab no. 1 & 2
 
-##Description
+### Description
 
 - in this project 2 clusterization algorithms presented:
   - algorithm of K mean
