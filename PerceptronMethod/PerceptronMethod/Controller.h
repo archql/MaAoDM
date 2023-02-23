@@ -20,6 +20,7 @@ public:
     void setActiveClass(int classNo);
     void clear();
     void toggleStudyMode();
+    void fill();
 
 private:
     int mWidth;

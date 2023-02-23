@@ -10,13 +10,13 @@ ViewportController::ViewportController(int fieldW, int fieldH)
     mScreenW = 0; // prevent div by 0  ?
     mScreenH = 0; // prevent div by 0  ?
 
-    mFieldW = fieldW;
-    mFieldH = fieldH;
+    mFieldW = fieldW * 2;
+    mFieldH = fieldH * 2;
 
-    mViewPosX1 = 0.0;
-    mViewPosX2 = fieldW;
-    mViewPosY1 = 0.0;
-    mViewPosY2 = fieldH;
+    mViewPosX1 = -mFieldW / 2;
+    mViewPosX2 = mFieldW / 2;
+    mViewPosY1 = -mFieldH / 2;
+    mViewPosY2 = mFieldH / 2;
 
     mZoom = 1.0;
 
@@ -84,8 +84,8 @@ void ViewportController::updateScreen(int screenW, int screenH)
 
 void ViewportController::updateField(int fieldW, int fieldH)
 {
-    mFieldW = fieldW;
-    mFieldH = fieldH;
+    mFieldW = fieldW * 2;
+    mFieldH = fieldH * 2;
 }
 
 void ViewportController::openGl()
@@ -105,15 +105,17 @@ void ViewportController::toOpenglCords(int& x, int& y)
 {
     x /= mPointSize;
     y /= mPointSize;
+    x += mViewPosX1;
+    y += mViewPosY1;
 }
 
 void ViewportController::apply()
 {
     // Temp
-    mViewPosX1 = 0.0;
-    mViewPosX2 = mFieldW;
-    mViewPosY1 = 0.0;
-    mViewPosY2 = mFieldH;
+    mViewPosX1 = -mFieldW / 2;
+    mViewPosX2 = mFieldW/2;
+    mViewPosY1 = -mFieldH/2;
+    mViewPosY2 = mFieldH/2;
 
     // get point size and screen info
     double pSZ1 = (double)mScreenW / mFieldW;
@@ -121,12 +123,14 @@ void ViewportController::apply()
     if (pSZ1 < pSZ2)
     { // width is prioritized
         mPointSize = pSZ1;
-        mViewPosY2 = (double)mScreenH / mPointSize;
+        mViewPosY2 = (double)mScreenH / mPointSize / 2.;
+        mViewPosY1 = -(double)mScreenH / mPointSize / 2.;
     }
     else
     { // height is prioritized
         mPointSize = pSZ2;
-        mViewPosX2 = (double)mScreenW / mPointSize;
+        mViewPosX2 = (double)mScreenW / mPointSize / 2.;
+        mViewPosX1 = -(double)mScreenW / mPointSize / 2.;
     }
     glLineWidth(mPointSize * 0.3);
 }

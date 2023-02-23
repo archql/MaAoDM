@@ -5,7 +5,7 @@
 
 View::View() :
     mViewportController(20, 20), // 20
-    mController(20, 20, 3, 0.2), // 100000, 20
+    mController(20, 20, 5, 10), // 100000, 20
     mRunning(false)
 {
 }
@@ -62,6 +62,9 @@ void View::keyboard(unsigned char key, int x, int y)
         mController.setActiveClass(key - (unsigned char)('1'));
     } else if (key == (unsigned char)('S') || key == (unsigned char)('s')) {
         mController.toggleStudyMode();
+    } else if (key == (unsigned char)(13)) {
+        mController.fill();
+        glutPostRedisplay();
     }
 }
 

@@ -64,18 +64,18 @@ void Controller::draw()
     for (size_t i = 0; i < mFunctions.size(); ++i) {
         const auto& f = mFunctions[i];
         // try to use 0.0
-        double x1 = 0.0, y1 = 0.0;
-        double y0 = -(f.z()) / f.y();
-        double x0 = -(f.z()) / f.x();
+        double x1 = -mWidth, y1 = -mHeight;
+        double y0 = -(f.z() - f.x() * mWidth) / f.y();
+        double x0 = -(f.z() - f.y() * mWidth) / f.x();
 
         // try to use mWidth  mHeight (if wrong x0 y0)
-        if (y0 < 0) {
+        if (y0 < x1) {
             y0 = -(f.z() + f.x() * mWidth) / f.y();
             x1 = mWidth;
         }
-        if (x0 < 0) {
+        if (x0 < y1) {
             x0 = -(f.z() + f.y() * mHeight) / f.x();
-            y1 = mWidth;
+            y1 = mHeight;
         }
 
 
@@ -125,7 +125,7 @@ void Controller::addPoint(int x, int y)
         }
     }
     mPoints.emplace_back(p);
-    std::cout << "new point: x= " << x << " y= " << y << " (" << p.mClassNum << ")" << std::endl;
+    //std::cout << "new point: x= " << x << " y= " << y << " (" << p.mClassNum << ")" << std::endl;
 }
 
 void Controller::setActiveClass(int classNo)
@@ -137,6 +137,7 @@ void Controller::setActiveClass(int classNo)
 
 void Controller::clear()
 {
+    mStudyMode = true;
     mPoints.clear();
     for (auto& f : mFunctions) {
         f.reset();
@@ -147,6 +148,16 @@ void Controller::toggleStudyMode()
 {
     mStudyMode = !mStudyMode;
     std::cout << "study enabled? " << mStudyMode << std::endl;
+}
+
+void Controller::fill()
+{
+    mStudyMode = false;
+    for (int x = -mWidth; x < mWidth; x++) {
+        for (int y = -mHeight; y < mHeight; y++) {
+            addPoint(x, y);
+        }
+    }
 }
 
 void Controller::step()
