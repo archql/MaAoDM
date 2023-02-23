@@ -9,15 +9,16 @@
 #include <chrono>
 
 #include "NamedColorTable.h"
-#include "AlgKmean.h"
-#include "AlgMaxiMin.h"
 
-Controller::Controller(int width, int height, int numOfPoints, int numOfClasses) :
-    mPoints(numOfPoints),
-    mCores(numOfClasses),
+Controller::Controller(int width, int height, int numOfClasses, double coeff) :
     mWidth(width),
     mHeight(height),
-    mNumOfClasses(numOfClasses)
+    mNumOfClasses(numOfClasses),
+    mFunctions(numOfClasses),
+    mPoints(),
+    mActiveClass(0),
+    mCoeff(coeff),
+    mStudyMode(true)
 {
     // create gllist for view
     glNewList(CUSTOM_LIST_ID, GL_COMPILE); // TODO 1000 is test
@@ -30,106 +31,182 @@ Controller::Controller(int width, int height, int numOfPoints, int numOfClasses)
     glEndList();
     // init
     // step 0. Getting input data vectors.
-    std::srand(std::time(NULL)); //  Providing a seed value
-
-    for (Point& p : mPoints) {
-        p.mX = std::rand() % width;
-        p.mY = std::rand() % height;
-    }
-
-    // TEST
-    glNewList(CUSTOM_LIST_ID + 1, GL_COMPILE); // TODO 1000 is test
-    glBegin(GL_POINTS);
-    for (int i = 0; i < width; i += 4) {
-        for (int j = 0; j < height; j += 4) {
-            for (int k = 0; k < 100; ++k) {
-                glVertex2i(i, j);
-            }
-        }
-    }
-    glEnd();
-    glEndList();
-
-    // setup algorithm
-    //mCores.clear(); // it is for AlgMaxiMin
-    mAlgorithm = new AlgKmean(mPoints, mCores);//new AlgKmean(mPoints, mCores);
-    mAlgorithm->init();
+    //std::srand(std::time(NULL)); //  Providing a seed value
+    //
+    //for (Point& p : mPoints) {
+    //    p.mX = std::rand() % width;
+    //    p.mY = std::rand() % height;
+    //}
+    mPoints.emplace_back(Point(0, 0, 0, 1));
+    mPoints.emplace_back(Point(1, 1, 1, 1));
+    mPoints.emplace_back(Point(2, -1, 1, 1));
 }
 
 Controller::~Controller()
 {
     glDeleteLists(CUSTOM_LIST_ID, 1);
     glDeleteLists(CUSTOM_LIST_ID + 1, 1);
-
-    delete mAlgorithm;
 }
 
 void Controller::update()
 {
-    mAlgorithm->step();
+    //mAlgorithm->step();
+    step();
 }
 
-long long counter = 0;
-long long usAvg = 0;
 void Controller::draw()
 {
-    //for (const Point& p : mPoints) {
-    //    glPushMatrix();
-    //    glTranslatef(p.mX, p.mY, 0.0);
-    //    glScalef(2.0, 2.0, 1.0);
-    //    setColorFromClassNum(p.mClassNum);
-    //    glCallList(CUSTOM_LIST_ID);
-    //    glPopMatrix();
-    //}
-    //for (const Point& p : mCores) {
-    //    glPushMatrix();
-    //    glTranslatef(p.mX, p.mY, 0.0);
-    //
-    //    glScalef(6.0, 6.0, 1.0);
-    //    glColor3f(1.0, 1.0, 1.0);
-    //    glCallList(CUSTOM_LIST_ID);
-    //
-    //    glScalef(0.7, 0.7, 1.0);
-    //    setColorFromClassNum(p.mClassNum);
-    //    glCallList(CUSTOM_LIST_ID);
-    //    glPopMatrix();
-    //}
-    counter++;
-    auto start = std::chrono::high_resolution_clock::now();
-    glPointSize(2.f);
-    setColorFromClassNum(1);
-    //glBegin(GL_POINTS);
-    glCallList(CUSTOM_LIST_ID + 1);
-    //glEnd();
-    auto elapsed = std::chrono::high_resolution_clock::now() - start;
-    auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count();
-    usAvg += microseconds;
-    std::cout << "elapsed: "<< microseconds << " us\n";
-    std::cout << "elapsedavg: " << usAvg / counter << " (" << usAvg << ") us\n";
+    // draw center line axises
+
+    // draw polygons
+    NamedColorTable::alphaColor buffer;
+
+    for (size_t i = 0; i < mFunctions.size(); ++i) {
+        const auto& f = mFunctions[i];
+        // try to use 0.0
+        double x1 = 0.0, y1 = 0.0;
+        double y0 = -(f.z()) / f.y();
+        double x0 = -(f.z()) / f.x();
+
+        // try to use mWidth  mHeight (if wrong x0 y0)
+        if (y0 < 0) {
+            y0 = -(f.z() + f.x() * mWidth) / f.y();
+            x1 = mWidth;
+        }
+        if (x0 < 0) {
+            x0 = -(f.z() + f.y() * mHeight) / f.x();
+            y1 = mWidth;
+        }
+
+
+        if (isinf(y0) || isnan(y0)) {
+            y0 = mHeight;
+            x1 = x0;
+        }
+        if (isinf(x0) || isnan(x0)) {
+            x0 = mWidth;
+            y1 = y0;
+        }
+
+        std::cout << "(0, " << y0 << ") (" << x0 << ", 0)\n";
+        // get (width, 0) and (0, height) pos
+        glColor3ubv(getColorFromClassNum(i));
+        glBegin(GL_LINES);
+        glVertex2d(x1, y0);
+        glVertex2d(x0, y1);
+        glEnd();
+    }
+
+    // draw points
+    for (const Point& p : mPoints) {
+        glPushMatrix();
+        glTranslatef(p.x(), p.y(), 0.0);
+        glScalef(0.5, 0.5, 1.0);
+        glColor3ubv(getColorFromClassNum(p.mClassNum));
+        glCallList(CUSTOM_LIST_ID);
+        glPopMatrix();
+    }
 }
 
-void Controller::setColorFromClassNum(int classNum) {
+void Controller::addPoint(int x, int y)
+{
+    Point p(mActiveClass, x, y, 1);
+    if (!mStudyMode) {
+        // find closest class
+        double vMax = p.dot(mFunctions[0]);
+        p.mClassNum = 0;
+        for (size_t i = 1; i < mFunctions.size(); ++i) {
+            auto& f = mFunctions[i];
+            const double v = p.dot(f);
+            if (v > vMax) {
+                vMax = v;
+                p.mClassNum = i;
+            }
+        }
+    }
+    mPoints.emplace_back(p);
+    std::cout << "new point: x= " << x << " y= " << y << " (" << p.mClassNum << ")" << std::endl;
+}
+
+void Controller::setActiveClass(int classNo)
+{
+    if (classNo < mNumOfClasses) {
+        mActiveClass = classNo;
+    }
+}
+
+void Controller::clear()
+{
+    mPoints.clear();
+    for (auto& f : mFunctions) {
+        f.reset();
+    }
+}
+
+void Controller::toggleStudyMode()
+{
+    mStudyMode = !mStudyMode;
+    std::cout << "study enabled? " << mStudyMode << std::endl;
+}
+
+void Controller::step()
+{
+    bool finished = true;
+    for (const auto& p : mPoints) {
+        // get current funtion and its value
+        const size_t curClass = p.mClassNum;
+        auto& fCur = mFunctions[curClass];
+        const double vCur = p.dot(fCur);
+        // for other functions
+        bool unbalanced = false;
+        for (size_t i = 0; i < mFunctions.size(); ++i) {
+            if (i == curClass) { // ignore current function
+                continue;
+            }
+            auto& f = mFunctions[i];
+            const double vOther = p.dot(f);
+            if (vOther > vCur || abs(vOther - vCur) < 0.001) {
+                // rebalance needed
+                f -= (p * mCoeff);
+                unbalanced = true;
+            }
+        }
+        if (unbalanced) {
+            // set finished to false (failed to balance)
+            finished = false;
+            fCur += (p * mCoeff);
+        }
+    }
+    std::cout << "functions:" << std::endl;
+    for (size_t i = 0; i < mFunctions.size(); ++i) {
+        const auto& f = mFunctions[i];
+        std::printf(" f%-3d = %+.2f %+.2f*x1 %+.2f*x2\n", i, f.z(), f.x(), f.y());
+    }
+    std::cout << "finished? " << finished << std::endl;
+}
+
+const unsigned char* Controller::getColorFromClassNum(int classNum) {
     switch (classNum) {
-    case 0: glColor3ubv(NamedColorTable::purple); break;
-    case 1: glColor3ubv(NamedColorTable::crimson); break;
-    case 2: glColor3ubv(NamedColorTable::hotpink); break;
-    case 3: glColor3ubv(NamedColorTable::tomato); break;
-    case 4: glColor3ubv(NamedColorTable::gold); break;
-    case 5: glColor3ubv(NamedColorTable::blueviolet); break;
-    case 6: glColor3ubv(NamedColorTable::green); break;
-    case 7: glColor3ubv(NamedColorTable::teal); break;
-    case 8: glColor3ubv(NamedColorTable::royalblue); break;
-    case 9: glColor3ubv(NamedColorTable::darkkhaki); break;
-    case 10: glColor3ubv(NamedColorTable::salmon); break;
-    case 11: glColor3ubv(NamedColorTable::pink); break;
-    case 12: glColor3ubv(NamedColorTable::orangered); break;
-    case 13: glColor3ubv(NamedColorTable::yellow); break;
-    case 14: glColor3ubv(NamedColorTable::indigo); break;
-    case 15: glColor3ubv(NamedColorTable::greenyellow); break;
-    case 16: glColor3ubv(NamedColorTable::mediumspringgreen); break;
-    case 17: glColor3ubv(NamedColorTable::lightcyan); break;
-    case 18: glColor3ubv(NamedColorTable::deepskyblue); break;
-    case 19: glColor3ubv(NamedColorTable::brown); break;
-    default: glColor3ubv(NamedColorTable::gray); break;
+    case 0: return (NamedColorTable::purple); break;
+    case 1: return (NamedColorTable::crimson); break;
+    case 2: return (NamedColorTable::royalblue); break;
+    case 3: return (NamedColorTable::tomato); break;
+    case 4: return (NamedColorTable::gold); break;
+    case 5: return (NamedColorTable::blueviolet); break;
+    case 6: return (NamedColorTable::green); break;
+    case 7: return (NamedColorTable::teal); break;
+    case 8: return (NamedColorTable::hotpink); break;
+    case 9: return (NamedColorTable::darkkhaki); break;
+    case 10:return (NamedColorTable::salmon); break;
+    case 11:return (NamedColorTable::pink); break;
+    case 12:return (NamedColorTable::orangered); break;
+    case 13:return (NamedColorTable::yellow); break;
+    case 14:return (NamedColorTable::indigo); break;
+    case 15:return (NamedColorTable::greenyellow); break;
+    case 16:return (NamedColorTable::mediumspringgreen); break;
+    case 17:return (NamedColorTable::lightcyan); break;
+    case 18:return (NamedColorTable::deepskyblue); break;
+    case 19:return (NamedColorTable::brown); break;
+    default:return (NamedColorTable::gray); break;
     }
 }

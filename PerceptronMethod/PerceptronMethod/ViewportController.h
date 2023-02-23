@@ -18,6 +18,8 @@ public:
 
     void openGl();
 
+    void toOpenglCords(int &x, int &y);
+
 private:
     void apply();
 

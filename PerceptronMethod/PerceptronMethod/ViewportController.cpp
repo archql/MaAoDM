@@ -101,6 +101,12 @@ void ViewportController::openGl()
     //glPointSize(mPointSize + 1);
 }
 
+void ViewportController::toOpenglCords(int& x, int& y)
+{
+    x /= mPointSize;
+    y /= mPointSize;
+}
+
 void ViewportController::apply()
 {
     // Temp
@@ -122,4 +128,5 @@ void ViewportController::apply()
         mPointSize = pSZ2;
         mViewPosX2 = (double)mScreenW / mPointSize;
     }
+    glLineWidth(mPointSize * 0.3);
 }

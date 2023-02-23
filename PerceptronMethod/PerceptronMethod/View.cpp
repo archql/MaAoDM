@@ -4,8 +4,8 @@
 #include <iostream>
 
 View::View() :
-    mViewportController(1200, 800),
-    mController(1200, 800, 100000, 3), // 100000, 20
+    mViewportController(20, 20), // 20
+    mController(20, 20, 3, 0.2), // 100000, 20
     mRunning(false)
 {
 }
@@ -25,8 +25,6 @@ void View::display()
     glLoadIdentity();
     glTranslatef(0.5, 0.5, 0.0);
 
-    // draw
-    int x, y;
     // your draw func here
     mController.draw();
 
@@ -43,7 +41,9 @@ void View::mouse(int button, int state, int x, int y)
 {
     //std::cout << "pos" << x << y;
     if ((button == GLUT_LEFT_BUTTON) && (state & GLUT_UP)) {
-        mController.update();
+        //mController.update();
+        mViewportController.toOpenglCords(x, y);
+        mController.addPoint(x, y); 
     }
     glutPostRedisplay();
 }
@@ -51,7 +51,17 @@ void View::mouse(int button, int state, int x, int y)
 void View::keyboard(unsigned char key, int x, int y)
 {
     if (key == (unsigned char)(' ')) { // space hit
+        mController.update();
+        glutPostRedisplay();
+    } else if (key == (unsigned char)(32)) { // space hit
         mRunning = !mRunning;
+    } else if (key == (unsigned char)(8)) { // backspace hit
+        mController.clear();
+        glutPostRedisplay();
+    } else if (key >= (unsigned char)('1') && key <= (unsigned char)('9')) {
+        mController.setActiveClass(key - (unsigned char)('1'));
+    } else if (key == (unsigned char)('S') || key == (unsigned char)('s')) {
+        mController.toggleStudyMode();
     }
 }
 

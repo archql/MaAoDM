@@ -11,21 +11,32 @@ class Controller
 public:
     static constexpr int CUSTOM_LIST_ID = 1000;
 public:
-    Controller(int width, int height, int numOfPoints, int numOfClasses);
+    Controller(int width, int height, int numOfClasses, double coeff = 1.0);
     ~Controller();
 public:
     void update();
     void draw();
+    void addPoint(int x, int y);
+    void setActiveClass(int classNo);
+    void clear();
+    void toggleStudyMode();
 
 private:
     int mWidth;
     int mHeight;
 
     int mNumOfClasses;
+    int mActiveClass;
+    double mCoeff;
     std::vector<Point> mPoints;
-    std::vector<Point> mCores;
+    std::vector <Point> mFunctions;
+
+    bool mStudyMode;
 
 private:
-    void setColorFromClassNum(int classNum);
+    void step();
+
+private:
+    const unsigned char* getColorFromClassNum(int classNum);
 
 };

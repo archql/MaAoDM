@@ -12,7 +12,15 @@
 // use it as glColorubv(NamedColorTable::NAME);
 
 class NamedColorTable {
+public:
     using color = GLubyte[3];
+    using alphaColor = GLubyte[4];
+public:
+    static GLubyte* getAlphaBlended(const color clr, alphaColor buffer, GLubyte alpha) {
+        std::memcpy(buffer, clr, 3);
+        buffer[3] = alpha;
+        return buffer;
+;    }
 public:
     static constexpr color lightpink = { 255, 182, 193 };
     static constexpr color pink = { 255, 192, 203 };
