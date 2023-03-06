@@ -34,6 +34,11 @@ double Point::z() const
     return mArr[2];
 }
 
+double Point::w() const
+{
+    return mArr[3];
+}
+
 
 void Point::setX(double x)
 {
@@ -52,10 +57,15 @@ void Point::setZ(double z)
     mArr[2] = z;
 }
 
+void Point::setW(double w)
+{
+    mArr[3] = w;
+}
+
 
 void Point::reset()
 {
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         mArr[i] = 0.0;
     }
 }
@@ -70,7 +80,7 @@ double& Point::operator[](size_t index)
     return mArr[index];
 }
 
-
+// warn!
 double Point::distance2To(const Point& p) const
 {
     double dst = 0.0;
@@ -80,7 +90,7 @@ double Point::distance2To(const Point& p) const
     }
     return dst;
 }
-
+// warn!
 double Point::distanceTo(const Point& p) const
 {
     return sqrt(distance2To(p));
@@ -89,7 +99,7 @@ double Point::distanceTo(const Point& p) const
 
 Point& Point::operator+=(const Point& p)
 {
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         mArr[i] += p[i];
     }
 
@@ -98,7 +108,7 @@ Point& Point::operator+=(const Point& p)
 
 Point& Point::operator-=(const Point& p)
 {
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         mArr[i] -= p[i];
     }
 
@@ -108,13 +118,13 @@ Point& Point::operator-=(const Point& p)
 
 Point& Point::operator/=(int n)
 {
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         mArr[i] /= n;
     }
     return *this;
 }
 
-
+// warn!
 bool Point::operator==(const Point& p) const
 {
     bool result = true;
@@ -128,7 +138,7 @@ bool Point::operator==(const Point& p) const
 Point Point::operator+(const Point& p) const
 {
     Point newP;
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         newP[i] = mArr[i] + p[i];
     }
     return newP;
@@ -138,7 +148,7 @@ Point Point::operator+(const Point& p) const
 Point Point::operator*(double value) const
 {
     Point newP;
-    for (size_t i = 0; i < 3; i++) {
+    for (size_t i = 0; i < 4; i++) {
         newP[i] = mArr[i] * value;
     }
     return newP;

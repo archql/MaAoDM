@@ -59,6 +59,7 @@ void Controller::draw()
     // draw center line axises
 
     // draw polygons
+    /*
     NamedColorTable::alphaColor buffer;
 
     for (size_t i = 0; i < mFunctions.size(); ++i) {
@@ -96,7 +97,7 @@ void Controller::draw()
         glVertex2d(x0, y1);
         glEnd();
     }
-
+    */
     // draw points
     for (const Point& p : mPoints) {
         glPushMatrix();
@@ -106,6 +107,24 @@ void Controller::draw()
         glCallList(CUSTOM_LIST_ID);
         glPopMatrix();
     }
+
+    /*
+    * Logics of 5th lab here
+    */
+    glBegin(GL_LINE_LOOP);
+    // draw potentials (5th lab)
+    for (int x = -mWidth; x <= mWidth; ++x) {
+        // count f(x)
+        const auto& f = mPotentialSum;
+        const double y = -(f.x() * x + f.z()) / (f.w()*x + f.y());
+        glVertex2d(x, y);
+    }
+    glEnd();
+}
+
+double potentialFunc(const Point& p, const Point& pi) {
+    return p.x() * pi.x() + p.y() * pi.y() +
+        p.z() * pi.z() + pi.x() * pi.y() * p.w();
 }
 
 void Controller::addPoint(int x, int y)
@@ -113,16 +132,23 @@ void Controller::addPoint(int x, int y)
     Point p(mActiveClass, x, y, 1);
     if (!mStudyMode) {
         // find closest class
-        double vMax = p.dot(mFunctions[0]);
-        p.mClassNum = 0;
-        for (size_t i = 1; i < mFunctions.size(); ++i) {
-            auto& f = mFunctions[i];
-            const double v = p.dot(f);
-            if (v > vMax) {
-                vMax = v;
-                p.mClassNum = i;
-            }
+        //double vMax = p.dot(mFunctions[0]);
+        //p.mClassNum = 0;
+        //for (size_t i = 1; i < mFunctions.size(); ++i) {
+        //    auto& f = mFunctions[i];
+        //    const double v = p.dot(f);
+        //    if (v > vMax) {
+        //        vMax = v;
+        //        p.mClassNum = i;
+        //    }
+        //}
+        const double potential = potentialFunc(mPotentialSum, p);
+        if (potential > 0) {
+            p.mClassNum = 0;
+        } else {
+            p.mClassNum = 1;
         }
+
     }
     mPoints.emplace_back(p);
     //std::cout << "new point: x= " << x << " y= " << y << " (" << p.mClassNum << ")" << std::endl;
@@ -162,37 +188,57 @@ void Controller::fill()
 
 void Controller::step()
 {
+    //bool finished = true;
+    //for (const auto& p : mPoints) {
+    //    // get current funtion and its value
+    //    const size_t curClass = p.mClassNum;
+    //    auto& fCur = mFunctions[curClass];
+    //    const double vCur = p.dot(fCur);
+    //    // for other functions
+    //    bool unbalanced = false;
+    //    for (size_t i = 0; i < mFunctions.size(); ++i) {
+    //        if (i == curClass) { // ignore current function
+    //            continue;
+    //        }
+    //        auto& f = mFunctions[i];
+    //        const double vOther = p.dot(f);
+    //        if (vOther > vCur || abs(vOther - vCur) < 0.001) {
+    //            // rebalance needed
+    //            f -= (p * mCoeff);
+    //            unbalanced = true;
+    //        }
+    //    }
+    //    if (unbalanced) {
+    //        // set finished to false (failed to balance)
+    //        finished = false;
+    //        fCur += (p * mCoeff);
+    //    }
+    //}
+    //std::cout << "functions:" << std::endl;
+    //for (size_t i = 0; i < mFunctions.size(); ++i) {
+    //    const auto& f = mFunctions[i];
+    //    std::printf(" f%-3d = %+.2f %+.2f*x1 %+.2f*x2\n", i, f.z(), f.x(), f.y());
+    //}
+    //std::cout << "finished? " << finished << std::endl;
+    //
+    /*
+    * Logics of 5th lab here
+    */
     bool finished = true;
     for (const auto& p : mPoints) {
-        // get current funtion and its value
-        const size_t curClass = p.mClassNum;
-        auto& fCur = mFunctions[curClass];
-        const double vCur = p.dot(fCur);
-        // for other functions
-        bool unbalanced = false;
-        for (size_t i = 0; i < mFunctions.size(); ++i) {
-            if (i == curClass) { // ignore current function
-                continue;
-            }
-            auto& f = mFunctions[i];
-            const double vOther = p.dot(f);
-            if (vOther > vCur || abs(vOther - vCur) < 0.001) {
-                // rebalance needed
-                f -= (p * mCoeff);
-                unbalanced = true;
-            }
+        const double potential = potentialFunc(mPotentialSum, p);
+        double k;
+        if (potential <= 0 && p.mClassNum == 0) {
+            k = 1.0;
+        } else if (potential >= 0 && p.mClassNum == 1) {
+            k = -1.0;
+        } else {
+            k = 0.0;
         }
-        if (unbalanced) {
-            // set finished to false (failed to balance)
-            finished = false;
-            fCur += (p * mCoeff);
-        }
+        mPotentialSum += Point(0, 4 * p.x(), 4 * p.y(), 1, 16 * p.x() * p.y()) * k;
     }
-    std::cout << "functions:" << std::endl;
-    for (size_t i = 0; i < mFunctions.size(); ++i) {
-        const auto& f = mFunctions[i];
-        std::printf(" f%-3d = %+.2f %+.2f*x1 %+.2f*x2\n", i, f.z(), f.x(), f.y());
-    }
+    const auto& f = mPotentialSum;
+    std::printf(" f = %+.2f %+.2f*x1 %+.2f*x2 %+.2f*x1*x2\n", f.z(), f.x(), f.y(), f.w());
     std::cout << "finished? " << finished << std::endl;
 }
 

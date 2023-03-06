@@ -13,6 +13,15 @@ public:
         mArr[0] = x;
         mArr[1] = y;
         mArr[2] = z;
+        mArr[3] = 0.0;
+    }
+    Point(int classNum, double x, double y, double z, double w)
+    {
+        mClassNum = classNum;
+        mArr[0] = x;
+        mArr[1] = y;
+        mArr[2] = z;
+        mArr[3] = w;
     }
 public:
     int mClassNum;
@@ -24,11 +33,15 @@ public:
 
     double z() const;
 
+    double w() const;
+
     void setX(double x);
 
     void setY(double y);
 
     void setZ(double z);
+
+    void setW(double w);
 
     void reset();
 
@@ -51,5 +64,5 @@ public:
     Point operator*(double value) const;
 
 private:
-    std::array<double, 3> mArr;
+    std::array<double, 4> mArr;
 };

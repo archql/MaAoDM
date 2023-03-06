@@ -34,6 +34,10 @@ private:
 
     bool mStudyMode;
 
+    /**5th lab*/
+
+    Point mPotentialSum;
+
 private:
     void step();
 

@@ -5,7 +5,7 @@
 
 View::View() :
     mViewportController(20, 20), // 20
-    mController(20, 20, 5, 10), // 100000, 20
+    mController(20, 20, 2, 10), // 100000, 20
     mRunning(false)
 {
 }
